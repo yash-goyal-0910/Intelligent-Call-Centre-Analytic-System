@@ -1,61 +1,202 @@
-# Intelligent Call Centre Analytic System
+# 🎙️ Intelligent Call Centre Analytic System
 
-An asynchronous, AI-powered system that processes Hinglish/Tanglish call center audio, transcribes it, and evaluates agent compliance strictly according to SOP (Standard Operating Procedures). 
+> An AI-powered API that processes Hinglish/Tanglish call centre audio and evaluates agent SOP compliance in real-time — built for GUVI Track 3.
 
-## How It Works (Step-by-Step)
-1. **API Audio Reception**: A client sends a Base64-encoded audio file (`.mp3`) via a `POST /api/call-analytics` request to the **FastAPI Server**. This endpoint is securely protected by a mandatory `x-api-key`.
-2. **Asynchronous Audio Processing**: To prevent long-running tasks from locking up the web server, the API pushes the audio to **Celery**. Celery is an async worker that manages the heavy lifting in the background, communicating via a **Redis** message broker.
-3. **Speech-to-Text (STT)**: Inside the worker, `faster-whisper` dynamically transcribes the audio, automatically parsing Tamil/Hindi accents into readable text representations.
-4. **NLP & SOP Validation**: The transcript is forwarded to the **Google Gemini Engine**. 
-   - A highly-tuned strict schema prompt forces Gemini to check if the agent correctly followed the greeting, identification, problem statement, solution offering, and closing steps.
-   - The engine also extracts analytics such as `paymentPreference`, `rejectionReasons`, `sentiment`, and `keywords`.
-5. **JSON Structuring**: The system combines the transcription and ML analytics into a rigid `JSON` mapping that flawlessly passes evaluation conditions.
+[![Live API](https://img.shields.io/badge/Live%20API-Render-46E3B7?style=for-the-badge&logo=render)](https://intelligent-call-centre.onrender.com)
+[![Python](https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)](https://docker.com)
 
-## Project Structure
-```text
-.
-├── app/
-│   ├── main.py.......... # FastAPI Endpoint
-│   ├── celery_app.py.... # Celery Worker Configuration
-│   ├── tasks.py......... # Background Task definitions
-│   └── ml_services.py... # NLP Logic (faster-whisper & Gemini GenAI SDK)
-├── tests/
-│   ├── test_api.py...... # Real endpoint API payload tester
-│   └── mock_test.py..... # Core NLP test (bypasses Celery/STT)
-├── Dockerfile........... # Linux environment image
-├── docker-compose.yml... # Multi-service launcher (API, Worker, Broker)
-└── requirements.txt..... # Python dependencies
+---
+
+## 🌐 Live Endpoint
+
+```
+POST https://intelligent-call-centre.onrender.com/api/call-analytics
 ```
 
-## Setup & Deployment Instructions
+> **Note:** Free tier may take ~50s on first request (cold start). Subsequent calls are fast.
+
+---
+
+## 🧠 How It Works
+
+```
+Client (Base64 MP3) 
+    ↓  POST /api/call-analytics
+FastAPI (auth via x-api-key)
+    ↓
+Celery Task Worker
+    ↓
+Gemini 2.5 Flash (native audio upload → simultaneous STT + NLP)
+    ↓
+Structured JSON Response
+```
+
+1. **API Reception** — Client sends a Base64-encoded `.mp3` via `POST /api/call-analytics`, authenticated by `x-api-key`.
+2. **Background Processing** — The audio task is handed to **Celery**, backed by **Redis** as a message broker, keeping the API server non-blocking.
+3. **Gemini Native Audio** — The audio file is uploaded directly to **Gemini 2.5 Flash**, which simultaneously transcribes Hinglish/Tanglish speech AND analyses the conversation — no separate STT library needed.
+4. **SOP Validation** — Gemini evaluates the agent against a 5-step script: Greeting → Identification → Problem Statement → Solution → Closing.
+5. **Structured Response** — A strict JSON schema is enforced, covering `transcript`, `summary`, `sop_validation`, `analytics`, and `keywords`.
+
+---
+
+## 📦 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| API Framework | FastAPI + Uvicorn |
+| Task Queue | Celery + Redis |
+| AI / STT / NLP | Google Gemini 2.5 Flash |
+| Containerisation | Docker + Docker Compose |
+| Deployment | Render.com (Free tier) |
+
+---
+
+## 📁 Project Structure
+
+```
+.
+├── app/
+│   ├── main.py          # FastAPI endpoint + API key auth
+│   ├── celery_app.py    # Celery worker configuration
+│   ├── tasks.py         # Background task (audio → Gemini → JSON)
+│   └── ml_services.py   # GeminiAudioService (STT + NLP in one call)
+├── tests/
+│   ├── test_api.py      # End-to-end API tester (local or production)
+│   ├── test_audio.py    # Direct Gemini audio upload test
+│   └── mock_test.py     # NLP-only test with hardcoded transcript
+├── .env.example         # Environment variable template
+├── Dockerfile           # Python 3.10 slim image
+├── docker-compose.yml   # Multi-service orchestration
+└── requirements.txt     # Python dependencies
+```
+
+---
+
+## 🚀 Setup & Run
 
 ### Prerequisites
-You need a Google API key. Create a `.env` file in the root folder with:
+- Docker & Docker Compose installed
+- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
+
+### 1. Clone & Configure
+
+```bash
+git clone https://github.com/yash-goyal-0910/Intelligent-Call-Centre-Analytic-System.git
+cd Intelligent-Call-Centre-Analytic-System
+
+# Copy the example env file and fill in your API key
+cp .env.example .env
+```
+
+Edit `.env`:
 ```env
 GOOGLE_API_KEY=your_gemini_api_key_here
 ```
 
-### 1. Launch Using Docker (Recommended for Testing/Deployment)
-Since `faster-whisper` relies heavily on C++ and Rust, building via Docker guarantees everything runs flawlessly.
+### 2. Run with Docker
+
 ```bash
-docker-compose build
-docker-compose up -d
+docker compose up --build -d
 ```
-The server will now be live at `http://localhost:8000`. 
 
-### 2. Live Deployment (For Assignment Submission)
-1. Commit the repository to GitHub.
-2. Link the repository to a hosting platform like Render.com or Railway.app. They will natively recognize the `Dockerfile` and boot the entire web service.
-3. Once deployed, inject your `GOOGLE_API_KEY` into their Environment variables setup.
+The API is now live at **`http://localhost:8000`**
 
-## Running Tests
-Navigate to the `tests/` folder.
-* **To strictly test the NLP Grading Matrix** (no servers required):
-  ```bash
-  python tests/mock_test.py
-  ```
-* **To test the live API**:
-  If the application is running, run:
-  ```bash
-  python tests/test_api.py path/to/sample.mp3 Tamil
-  ```
+### 3. Test the API
+
+```bash
+python tests/test_api.py sample.mp3 Tamil
+```
+
+To test the **live production URL**:
+```bash
+API_BASE_URL=https://intelligent-call-centre.onrender.com python tests/test_api.py sample.mp3 Tamil
+```
+
+---
+
+## 📡 API Reference
+
+### `POST /api/call-analytics`
+
+**Headers:**
+```
+x-api-key: sk_track3_987654321
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "language": "Tamil",
+  "audioFormat": "mp3",
+  "audioBase64": "<base64-encoded-mp3>"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "language": "Tamil",
+  "transcript": "Agent: Vanakkam, TechConnect calling...\nCustomer: Haan, bolo...",
+  "summary": "Agent called about outstanding EMI of ₹5000. Customer agreed to partial payment.",
+  "sop_validation": {
+    "greeting": true,
+    "identification": true,
+    "problemStatement": true,
+    "solutionOffering": true,
+    "closing": true,
+    "complianceScore": 1.0,
+    "adherenceStatus": "FOLLOWED",
+    "explanation": "Agent followed all 5 SOP steps correctly."
+  },
+  "analytics": {
+    "paymentPreference": "PARTIAL_PAYMENT",
+    "rejectionReason": "BUDGET_CONSTRAINTS",
+    "sentiment": "Neutral"
+  },
+  "keywords": ["EMI", "outstanding amount", "partial payment", "budget"]
+}
+```
+
+### Allowed Enum Values
+
+| Field | Values |
+|-------|--------|
+| `paymentPreference` | `EMI` · `FULL_PAYMENT` · `PARTIAL_PAYMENT` · `DOWN_PAYMENT` |
+| `rejectionReason` | `HIGH_INTEREST` · `BUDGET_CONSTRAINTS` · `ALREADY_PAID` · `NOT_INTERESTED` · `NONE` |
+| `adherenceStatus` | `FOLLOWED` · `NOT_FOLLOWED` |
+
+---
+
+## 🧪 Running Tests
+
+| Test | Command | Requires |
+|------|---------|----------|
+| NLP-only (no server) | `python tests/mock_test.py` | `.env` with API key |
+| Direct Gemini audio | `python tests/test_audio.py` | `.env` + `sample.mp3` |
+| Full API (local) | `python tests/test_api.py sample.mp3 Tamil` | Docker running |
+| Full API (production) | `API_BASE_URL=https://intelligent-call-centre.onrender.com python tests/test_api.py sample.mp3 Tamil` | Internet |
+
+---
+
+## ☁️ Deployment (Render.com)
+
+1. Push to GitHub
+2. Go to [Render Dashboard](https://dashboard.render.com) → **New Web Service** → **GitHub repo**
+3. Runtime: **Docker** (auto-detected from Dockerfile)
+4. Add environment variables:
+   - `GOOGLE_API_KEY` = your Gemini key
+   - `API_KEY` = `sk_track3_987654321`
+5. Deploy — Render builds the Docker image and goes live automatically
+
+---
+
+## 📋 Approach & Design Decisions
+
+- **Gemini native audio** instead of `faster-whisper`: Gemini 2.5 Flash handles Hinglish/Tanglish transcription natively and with far higher accuracy than CPU-quantized Whisper models. This also eliminates heavy C/C++ build dependencies.
+- **Single-pass architecture**: One Gemini call simultaneously transcribes and analyses — reducing latency and API round-trips.
+- **Strict JSON schema**: The Gemini prompt enforces exact field names and enum values so evaluation responses never deviate from the required format.
+- **Docker Compose**: Three-service stack (web + celery_worker + redis) ensures the system is fully reproducible across environments.
