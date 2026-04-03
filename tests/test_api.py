@@ -4,9 +4,10 @@ import json
 import sys
 import os
 
-# Switch between local and production
-BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
-# For production: set env var API_BASE_URL=https://intelligent-call-centre.onrender.com
+# Default: production URL. Override with API_BASE_URL env var for local testing.
+# Local:      set API_BASE_URL=http://localhost:8000
+# Production: https://intelligent-call-centre.onrender.com (default)
+BASE_URL = os.environ.get("API_BASE_URL", "https://intelligent-call-centre.onrender.com")
 
 def test_api(audio_file_path: str, language: str = "Tamil"):
     if not os.path.exists(audio_file_path):
