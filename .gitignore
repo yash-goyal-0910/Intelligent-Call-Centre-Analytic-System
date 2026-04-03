@@ -9,10 +9,9 @@ __pycache__/
 venv/
 venv311/
 env/
-.env
 
 # Secrets — never commit your real API keys
-# (use .env.example instead)
+.env
 
 # Docker
 *.log
@@ -21,5 +20,9 @@ env/
 .DS_Store
 Thumbs.db
 
-# Temp test output files
+# Test output files
 test_output*.txt
+*.txt.tmp
+
+# Problem statement PDF (not needed in repo)
+Problem Statement - 3.pdf
