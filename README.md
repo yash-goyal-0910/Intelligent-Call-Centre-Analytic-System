@@ -200,3 +200,37 @@ Content-Type: application/json
 - **Single-pass architecture**: One Gemini call simultaneously transcribes and analyses — reducing latency and API round-trips.
 - **Strict JSON schema**: The Gemini prompt enforces exact field names and enum values so evaluation responses never deviate from the required format.
 - **Docker Compose**: Three-service stack (web + celery_worker + redis) ensures the system is fully reproducible across environments.
+
+---
+
+## 🤖 AI Tools Used
+
+> **Disclosure:** The following AI tools were used in the development of this project, in compliance with the GUVI Track 3 AI Tool Policy.
+
+| Tool | Provider | Purpose |
+|------|----------|---------|
+| **Google Gemini 2.5 Flash** | Google DeepMind | Core AI engine — native audio transcription (STT) and NLP analysis (SOP validation, analytics, keywords) in a single API call |
+| **Google AI Studio** | Google | Gemini API key generation and prompt prototyping during development |
+| **Antigravity (AI Coding Assistant)** | Google DeepMind | Pair-programming assistant used for architecture design, code generation, debugging, containerisation, and documentation |
+
+### Gemini 2.5 Flash — Key Details
+- **Model ID:** `gemini-2.5-flash`
+- **SDK:** `google-genai==0.3.0`
+- **Capabilities used:** Native audio file upload → simultaneous Speech-to-Text + NLP in one `generate_content()` call
+- **Why Gemini over Whisper:** Handles Hinglish/Tanglish natively with no CPU-heavy C++ dependencies; eliminates a separate STT stage entirely
+
+> A detailed AI Tools documentation PDF (`AI_Tools_Documentation.pdf`) is included in this repository.
+
+---
+
+## ⚠️ Known Limitations
+
+| Limitation | Detail |
+|-----------|--------|
+| **Cold start latency** | Render.com free tier hibernates after inactivity — first request after idle can take ~50 seconds |
+| **Synchronous polling** | The `/api/call-analytics` endpoint polls the Celery task result in a loop (up to 120 s). A WebSocket or callback-based approach would be more scalable |
+| **Audio format** | Only `.mp3` is tested end-to-end; other formats (`.wav`, `.ogg`) are accepted but not validated |
+| **Language support** | Optimised for Hinglish and Tanglish; accuracy may vary for other regional language mixes |
+| **No persistent storage** | Task results are stored in Redis only; restarting the Redis container clears all historical results |
+| **Single API key auth** | Authentication uses a single static `x-api-key`; no per-user key management or rate limiting |
+| **Free-tier resource ceiling** | Render free tier limits RAM; very long audio files (>10 min) may cause OOM errors in the Celery worker |
