@@ -20,7 +20,7 @@ def test_api(audio_file_path: str, language: str = "Tamil"):
         
     url = f"{BASE_URL}/api/call-analytics"
     headers = {
-        "x-api-key": "sk_track3_987654321",
+        "x-api-key": "api_key_yash_0910",
         "Content-Type": "application/json"
     }
     payload = {

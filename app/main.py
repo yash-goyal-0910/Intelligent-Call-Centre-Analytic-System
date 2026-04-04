@@ -6,7 +6,7 @@ import os
 
 app = FastAPI(title="Call Centre Analytics API")
 
-API_KEY = os.environ.get("API_KEY", "sk_track3_987654321")
+API_KEY = os.environ.get("API_KEY", "api_key_yash_0910")
 
 class CallAnalyticsRequest(BaseModel):
     language: str

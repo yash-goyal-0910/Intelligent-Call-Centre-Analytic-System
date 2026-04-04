@@ -122,7 +122,7 @@ API_BASE_URL=https://intelligent-call-centre.onrender.com python tests/test_api.
 
 **Headers:**
 ```
-x-api-key: sk_track3_987654321
+x-api-key: api_key_yash_0910
 Content-Type: application/json
 ```
 
@@ -189,7 +189,7 @@ Content-Type: application/json
 3. Runtime: **Docker** (auto-detected from Dockerfile)
 4. Add environment variables:
    - `GOOGLE_API_KEY` = your Gemini key
-   - `API_KEY` = `sk_track3_987654321`
+   - `API_KEY` = `api_key_yash_0910`
 5. Deploy — Render builds the Docker image and goes live automatically
 
 ---
@@ -229,8 +229,6 @@ Content-Type: application/json
 |-----------|--------|
 | **Cold start latency** | Render.com free tier hibernates after inactivity — first request after idle can take ~50 seconds |
 | **Synchronous polling** | The `/api/call-analytics` endpoint polls the Celery task result in a loop (up to 120 s). A WebSocket or callback-based approach would be more scalable |
-| **Audio format** | Only `.mp3` is tested end-to-end; other formats (`.wav`, `.ogg`) are accepted but not validated |
-| **Language support** | Optimised for Hinglish and Tanglish; accuracy may vary for other regional language mixes |
 | **No persistent storage** | Task results are stored in Redis only; restarting the Redis container clears all historical results |
 | **Single API key auth** | Authentication uses a single static `x-api-key`; no per-user key management or rate limiting |
 | **Free-tier resource ceiling** | Render free tier limits RAM; very long audio files (>10 min) may cause OOM errors in the Celery worker |
